@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "HB Finance Mobile",
+    "slug": "hb-finance-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#101D35"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ]
+  }
+}
