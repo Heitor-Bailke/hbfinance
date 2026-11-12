@@ -4,12 +4,28 @@ import { useFinance } from '../../context/FinanceContext';
 import { CATEGORIAS, CORES, formatarMoeda } from '../../utils/formatacao';
 import styles from './styles';
 
-const mesAtual = new Date().toISOString().slice(0, 7);
-const mesAnterior = (() => {
+const formatarPeriodo = (valor) => {
+  const correspondencia = String(valor || '').match(/^(\d{4})-(\d{2})$/);
+  return correspondencia ? `${correspondencia[2]}/${correspondencia[1]}` : String(valor || '');
+};
+
+const normalizarPeriodoDigitado = (valor) => {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 6);
+  if (digitos.length <= 2) return digitos;
+  return `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+};
+
+const converterPeriodo = (valor) => {
+  const correspondencia = String(valor || '').match(/^(0[1-9]|1[0-2])\/(\d{4})$/);
+  return correspondencia ? `${correspondencia[2]}-${correspondencia[1]}` : '';
+};
+
+const mesAtual = formatarPeriodo(new Date().toISOString().slice(0, 7));
+const mesAnterior = formatarPeriodo((() => {
   const data = new Date();
   data.setMonth(data.getMonth() - 1);
   return data.toISOString().slice(0, 7);
-})();
+})());
 
 const intervaloValido = (inicio, fim) => /^\d{4}-(0[1-9]|1[0-2])$/.test(inicio)
   && /^\d{4}-(0[1-9]|1[0-2])$/.test(fim)
@@ -35,19 +51,23 @@ const Relatorios = ({ navigation }) => {
   const [inicioComparacao, setInicioComparacao] = useState(mesAnterior);
   const [fimComparacao, setFimComparacao] = useState(mesAnterior);
 
-  const periodoValido = intervaloValido(inicio, fim);
-  const comparacaoValida = intervaloValido(inicioComparacao, fimComparacao);
-  const resumo = useMemo(() => calcularResumo(filtrarPeriodo(movimentacoes, inicio, fim)), [movimentacoes, inicio, fim]);
-  const resumoComparacao = useMemo(() => calcularResumo(filtrarPeriodo(movimentacoes, inicioComparacao, fimComparacao)), [movimentacoes, inicioComparacao, fimComparacao]);
+  const inicioIso = converterPeriodo(inicio);
+  const fimIso = converterPeriodo(fim);
+  const inicioComparacaoIso = converterPeriodo(inicioComparacao);
+  const fimComparacaoIso = converterPeriodo(fimComparacao);
+  const periodoValido = intervaloValido(inicioIso, fimIso);
+  const comparacaoValida = intervaloValido(inicioComparacaoIso, fimComparacaoIso);
+  const resumo = useMemo(() => calcularResumo(filtrarPeriodo(movimentacoes, inicioIso, fimIso)), [movimentacoes, inicioIso, fimIso]);
+  const resumoComparacao = useMemo(() => calcularResumo(filtrarPeriodo(movimentacoes, inicioComparacaoIso, fimComparacaoIso)), [movimentacoes, inicioComparacaoIso, fimComparacaoIso]);
   const porCategoria = useMemo(() => CATEGORIAS
     .filter((item) => item !== 'Todas')
     .map((categoria) => ({
       categoria,
-      valor: filtrarPeriodo(movimentacoes, inicio, fim)
+      valor: filtrarPeriodo(movimentacoes, inicioIso, fimIso)
         .filter((item) => item.categoria === categoria && item.tipo === 'despesa')
         .reduce((total, item) => total + Number(item.valor || 0), 0),
     }))
-    .filter((item) => item.valor > 0), [movimentacoes, inicio, fim]);
+    .filter((item) => item.valor > 0), [movimentacoes, inicioIso, fimIso]);
 
   const variacao = (atual, anterior) => anterior === 0 ? (atual === 0 ? '0,00%' : 'Novo') : `${(((atual - anterior) / Math.abs(anterior)) * 100).toFixed(2).replace('.', ',')}%`;
 
@@ -64,16 +84,16 @@ const Relatorios = ({ navigation }) => {
       <Text style={styles.title}>Relatórios</Text>
       <View style={styles.periodCard}>
         <Text style={styles.periodTitle}>Período principal</Text>
-        <Text style={styles.periodHint}>Informe os meses no formato AAAA-MM</Text>
+        <Text style={styles.periodHint}>Informe os meses no formato MM/AAAA</Text>
         <View style={styles.periodRow}>
-          <View style={styles.periodField}><Text style={styles.label}>De</Text><TextInput value={inicio} onChangeText={setInicio} style={styles.periodInput} placeholder="2026-01" maxLength={7} /></View>
-          <View style={styles.periodField}><Text style={styles.label}>Até</Text><TextInput value={fim} onChangeText={setFim} style={styles.periodInput} placeholder="2026-11" maxLength={7} /></View>
+          <View style={styles.periodField}><Text style={styles.label}>De</Text><TextInput value={inicio} onChangeText={(valor) => setInicio(normalizarPeriodoDigitado(valor))} style={styles.periodInput} placeholder="01/2026" maxLength={7} keyboardType="numeric" /></View>
+          <View style={styles.periodField}><Text style={styles.label}>Até</Text><TextInput value={fim} onChangeText={(valor) => setFim(normalizarPeriodoDigitado(valor))} style={styles.periodInput} placeholder="11/2026" maxLength={7} keyboardType="numeric" /></View>
         </View>
         {!periodoValido ? <Text style={styles.error}>Informe meses válidos e o início deve ser anterior ao fim.</Text> : null}
         <Text style={styles.periodTitle}>Comparar com</Text>
         <View style={styles.periodRow}>
-          <View style={styles.periodField}><Text style={styles.label}>De</Text><TextInput value={inicioComparacao} onChangeText={setInicioComparacao} style={styles.periodInput} placeholder="2025-01" maxLength={7} /></View>
-          <View style={styles.periodField}><Text style={styles.label}>Até</Text><TextInput value={fimComparacao} onChangeText={setFimComparacao} style={styles.periodInput} placeholder="2025-11" maxLength={7} /></View>
+          <View style={styles.periodField}><Text style={styles.label}>De</Text><TextInput value={inicioComparacao} onChangeText={(valor) => setInicioComparacao(normalizarPeriodoDigitado(valor))} style={styles.periodInput} placeholder="01/2025" maxLength={7} keyboardType="numeric" /></View>
+          <View style={styles.periodField}><Text style={styles.label}>Até</Text><TextInput value={fimComparacao} onChangeText={(valor) => setFimComparacao(normalizarPeriodoDigitado(valor))} style={styles.periodInput} placeholder="11/2025" maxLength={7} keyboardType="numeric" /></View>
         </View>
         {!comparacaoValida ? <Text style={styles.error}>Informe um intervalo de comparação válido.</Text> : null}
       </View>
