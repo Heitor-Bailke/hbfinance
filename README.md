@@ -64,6 +64,17 @@ HBFinanceMobile/
 └── package.json
 ```
 
+## Configuração do banco
+
+Execute o script [supabase/rls.sql](./supabase/rls.sql) no SQL Editor do
+Supabase. Ele cria as tabelas `profiles`, `categories` e `transactions`,
+insere as categorias padrão, migra categorias existentes e configura as
+políticas RLS.
+
+O Supabase Auth continua armazenando as credenciais no schema interno `auth`.
+O aplicativo usa `category_id` em `transactions`, enquanto o nome da categoria
+continua disponível para as telas por meio da relação com `categories`.
+
 
 ## Segurança
 
@@ -88,4 +99,3 @@ segurança, disponibilidade, backup e conformidade.
 **Heitor Bailke de Bem**  
 Curso de Análise e Desenvolvimento de Sistemas  
 UVV
-

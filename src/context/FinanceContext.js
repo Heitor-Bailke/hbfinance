@@ -7,6 +7,7 @@ import {
   cadastrarUsuario,
   entrarUsuario,
   sairUsuario,
+  buscarCategorias,
 } from '../services/api';
 
 const FinanceContext = createContext(null);
@@ -16,6 +17,7 @@ export const FinanceProvider = ({ children }) => {
   const [movimentacoes, setMovimentacoes] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
+  const [categorias, setCategorias] = useState([]);
   const normalizarUsuario = (dados) => dados ? {
     ...dados,
     nome: dados.nome || dados.user_metadata?.full_name || dados.email,
@@ -41,7 +43,10 @@ export const FinanceProvider = ({ children }) => {
   const registrarUsuario = useCallback(async ({ nome, email, senha }) => {
     setErro('');
     const resultado = await cadastrarUsuario({ email: email.trim().toLowerCase(), senha, nome });
-    if (resultado.session) setUsuario(normalizarUsuario(resultado.user));
+    if (resultado.session) {
+      setUsuario(normalizarUsuario(resultado.user));
+      setCategorias(await buscarCategorias());
+    }
     return resultado;
   }, []);
 
@@ -49,6 +54,7 @@ export const FinanceProvider = ({ children }) => {
     setErro('');
     const encontrado = await entrarUsuario({ email: email.trim().toLowerCase(), senha });
     setUsuario(normalizarUsuario(encontrado));
+    setCategorias(await buscarCategorias());
     return encontrado;
   }, []);
 
@@ -58,17 +64,17 @@ export const FinanceProvider = ({ children }) => {
     }
     setErro('');
     const transacao = { ...dados, userId: usuario.id };
-    const nova = await cadastrarTransacao(transacao);
+    const nova = await cadastrarTransacao(transacao, categorias);
     setMovimentacoes((atuais) => [nova || { ...transacao, id: Date.now().toString() }, ...atuais]);
     return nova;
-  }, [usuario]);
+  }, [usuario, categorias]);
 
   const editarMovimentacao = useCallback(async (id, dados) => {
     if (!usuario) throw new Error('Faça login para editar um lançamento.');
-    const atualizada = await atualizarTransacao(id, { ...dados, userId: usuario.id });
+    const atualizada = await atualizarTransacao(id, { ...dados, userId: usuario.id }, categorias);
     setMovimentacoes((atuais) => atuais.map((item) => String(item.id) === String(id) ? atualizada : item));
     return atualizada;
-  }, [usuario]);
+  }, [usuario, categorias]);
 
   const removerMovimentacao = useCallback(async (id) => {
     if (!usuario) throw new Error('Faça login para excluir um lançamento.');
@@ -81,6 +87,7 @@ export const FinanceProvider = ({ children }) => {
     try {
       await sairUsuario();
       setUsuario(null);
+      setCategorias([]);
     } catch (error) {
       setErro(error.message);
     }
@@ -100,6 +107,7 @@ export const FinanceProvider = ({ children }) => {
 
   const valor = {
     usuario,
+    categorias,
     movimentacoes,
     carregando,
     erro,
