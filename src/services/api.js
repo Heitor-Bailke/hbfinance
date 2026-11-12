@@ -1,4 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
+import * as Device from 'expo-device';
+import * as Notifications from 'expo-notifications';
 
 const SUPABASE_URL = 'https://sqimnwaibsygkcqmrcwg.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_9BvIAJXyGstQxw0kscsO9A_VQytmcIC';
@@ -8,6 +10,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const toTransaction = (item) => ({
   ...item,
   userId: item.user_id,
+  createdBy: item.created_by,
   autorNome: item.created_by_profile?.full_name || 'Integrante',
   categoria: item.categories?.name || item.categoria,
 });
@@ -16,6 +19,15 @@ const fromTransaction = ({ householdId, categoria, categoryId, descricao, valor,
   user_id: authenticatedUserId,
   household_id: activeHouseholdId || householdId,
   created_by: authenticatedUserId,
+  categoria: categoria || (categoryId ? [...categoryMap.entries()].find(([, id]) => id === categoryId)?.[0] : null),
+  category_id: categoryId || categoryMap?.get(categoria) || null,
+  descricao,
+  valor,
+  tipo,
+  data,
+});
+
+const camposEditaveis = ({ categoria, categoryId, descricao, valor, tipo, data }, categoryMap) => ({
   categoria: categoria || (categoryId ? [...categoryMap.entries()].find(([, id]) => id === categoryId)?.[0] : null),
   category_id: categoryId || categoryMap?.get(categoria) || null,
   descricao,
@@ -83,6 +95,33 @@ export const convidarMembro = async (email) => {
   if (error) throw new Error(error.message);
 };
 
+export const removerMembro = async (userId) => {
+  const { error } = await supabase.rpc('remove_household_member', { target_user: userId });
+  if (error) throw new Error(error.message);
+};
+
+export const sairDaContaConjunta = async () => {
+  const { error } = await supabase.rpc('leave_household');
+  if (error) throw new Error(error.message);
+};
+
+export const buscarZeramentoAtual = async () => {
+  const { data, error } = await supabase
+    .from('balance_resets')
+    .select('reset_at, balance_before')
+    .order('reset_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+};
+
+export const zerarSaldoAtual = async () => {
+  const { data, error } = await supabase.rpc('reset_current_balance');
+  if (error) throw new Error(error.message);
+  return data;
+};
+
 export const sairUsuario = async () => {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
@@ -111,29 +150,74 @@ export const cadastrarTransacao = async (transacao, categorias = [], householdId
     .select('*, categories(id, name), created_by_profile:profiles!transactions_created_by_profile_fkey(full_name)')
     .single();
   if (error) throw new Error(error.message);
+  await solicitarPushDoLancamento(data.id);
   return toTransaction(data);
 };
 
 export const atualizarTransacao = async (id, transacao, categorias = [], householdId) => {
-  const usuario = await obterUsuarioAutenticado();
+  await obterUsuarioAutenticado();
   const categoryMap = new Map(categorias.map((item) => [item.name, item.id]));
   const { data, error } = await supabase
     .from('transactions')
-    .update(fromTransaction(transacao, usuario.id, categoryMap, householdId))
+    .update(camposEditaveis(transacao, categoryMap))
     .eq('id', id)
-    .eq('user_id', usuario.id)
     .select('*, categories(id, name), created_by_profile:profiles!transactions_created_by_profile_fkey(full_name)')
-    .single();
+    .maybeSingle();
   if (error) throw new Error(error.message);
+  if (!data) throw new Error('Apenas o criador do lançamento ou o dono da conta pode editar.');
   return toTransaction(data);
 };
 
 export const excluirTransacao = async (id) => {
-  const usuario = await obterUsuarioAutenticado();
+  await obterUsuarioAutenticado();
   const { error } = await supabase
     .from('transactions')
     .delete()
-    .eq('id', id)
-    .eq('user_id', usuario.id);
+    .eq('id', id);
   if (error) throw new Error(error.message);
+};
+
+export const buscarNotificacoes = async () => {
+  const { data, error } = await supabase
+    .from('notifications')
+    .select('id, title, body, read_at, created_at, transaction_id')
+    .order('created_at', { ascending: false });
+  if (error) throw new Error(error.message);
+  return data || [];
+};
+
+export const marcarNotificacaoLida = async (id) => {
+  const { error } = await supabase
+    .from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) throw new Error(error.message);
+};
+
+export const registrarNotificacoesPush = async () => {
+  if (!Device.isDevice) return;
+  const { status: statusAtual } = await Notifications.getPermissionsAsync();
+  let status = statusAtual;
+  if (status !== 'granted') {
+    const resultado = await Notifications.requestPermissionsAsync();
+    status = resultado.status;
+  }
+  if (status !== 'granted') throw new Error('Permissão de notificações não concedida.');
+  const token = (await Notifications.getExpoPushTokenAsync()).data;
+  const { data: plataforma } = await supabase.auth.getSession();
+  if (!plataforma.session?.user) throw new Error('Sua sessão expirou. Entre novamente.');
+  const { error } = await supabase.from('device_push_tokens').upsert({
+    user_id: plataforma.session.user.id,
+    token,
+    platform: Device.osName || 'unknown',
+    updated_at: new Date().toISOString(),
+  }, { onConflict: 'token' });
+  if (error) throw new Error(error.message);
+};
+
+export const solicitarPushDoLancamento = async (transactionId) => {
+  const { error } = await supabase.functions.invoke('send-transaction-notification', {
+    body: { transactionId },
+  });
+  if (error) console.warn('Push do lançamento não enviado:', error.message);
 };

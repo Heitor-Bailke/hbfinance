@@ -9,6 +9,7 @@ import Lancamentos from '../screens/Lancamentos';
 import NovoLancamento from '../screens/NovoLancamento';
 import Relatorios from '../screens/Relatorios';
 import ContaConjunta from '../screens/ContaConjunta';
+import Notificacoes from '../screens/Notificacoes';
 import { useFinance } from '../context/FinanceContext';
 import styles from './styles';
 
@@ -30,30 +31,42 @@ const MenuDrawer = (props) => {
   );
 };
 
-const NavegacaoPrincipal = () => (
-  <Drawer.Navigator
-    drawerContent={(props) => <MenuDrawer {...props} />}
-    screenOptions={({ navigation }) => ({
-      ...styles.navigator,
-      headerLeft: () => (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Abrir menu"
-          onPress={() => navigation.toggleDrawer()}
-          style={styles.menuButton}
-        >
-          <Text style={styles.menuButtonText}>•••</Text>
-        </Pressable>
-      ),
-    })}
-  >
-    <Drawer.Screen name="Dashboard" component={Dashboard} />
-    <Drawer.Screen name="Lançamentos" component={Lancamentos} />
-    <Drawer.Screen name="NovoLancamento" component={NovoLancamento} options={{ title: 'Novo lançamento' }} />
-    <Drawer.Screen name="Relatórios" component={Relatorios} />
-    <Drawer.Screen name="Conta conjunta" component={ContaConjunta} />
-  </Drawer.Navigator>
-);
+const NavegacaoPrincipal = () => {
+  const { notificacoes } = useFinance();
+  const naoLidas = notificacoes.filter((item) => !item.read_at).length;
+  return (
+    <Drawer.Navigator
+      drawerContent={(props) => <MenuDrawer {...props} />}
+      screenOptions={({ navigation }) => ({
+        ...styles.navigator,
+        headerLeft: () => (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Abrir menu"
+            onPress={() => navigation.toggleDrawer()}
+            style={styles.menuButton}
+          >
+            <Text style={styles.menuButtonText}>•••</Text>
+          </Pressable>
+        ),
+      })}
+    >
+      <Drawer.Screen name="Dashboard" component={Dashboard} />
+      <Drawer.Screen name="Lançamentos" component={Lancamentos} />
+      <Drawer.Screen name="NovoLancamento" component={NovoLancamento} options={{ title: 'Novo lançamento' }} />
+      <Drawer.Screen name="Relatórios" component={Relatorios} />
+      <Drawer.Screen
+        name="Notificações"
+        component={Notificacoes}
+        options={{
+          title: naoLidas ? `Notificações (${naoLidas})` : 'Notificações',
+          drawerLabel: () => <View style={styles.drawerNotificationLabel}><Text style={styles.drawerNotificationText}>Notificações</Text>{naoLidas ? <View style={styles.notificationDot} /> : null}</View>,
+        }}
+      />
+      <Drawer.Screen name="Conta conjunta" component={ContaConjunta} />
+    </Drawer.Navigator>
+  );
+};
 
 const Navigation = () => {
   const { usuario } = useFinance();

@@ -7,6 +7,12 @@
     "userInterfaceStyle": "light",
     "assetBundlePatterns": [
       "**/*"
-    ]
+    ],
+    "plugins": [
+      "expo-notifications"
+    ],
+    "android": {
+      "package": "com.heitbailke.hbfinance"
+    }
   }
 }

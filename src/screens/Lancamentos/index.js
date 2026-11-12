@@ -6,7 +6,7 @@ import { CATEGORIAS, CORES, ICONES_CATEGORIA } from '../../utils/formatacao';
 import styles from './styles';
 
 const Lancamentos = ({ navigation }) => {
-  const { movimentacoes, removerMovimentacao } = useFinance();
+  const { movimentacoes, removerMovimentacao, usuario, contaConjunta } = useFinance();
   const [tipo, setTipo] = useState('todos');
   const [categoria, setCategoria] = useState('Todas');
   const [categoriaAberta, setCategoriaAberta] = useState(false);
@@ -42,7 +42,10 @@ const Lancamentos = ({ navigation }) => {
           {categoriaAberta ? <View style={styles.categoryGrid}>{CATEGORIAS.map((item) => <Pressable key={item} onPress={() => { setCategoria(item); setCategoriaAberta(false); }} style={[styles.categoryOption, categoria === item && styles.categoryOptionSelected]}><View style={[styles.categoryOptionIcon, categoria === item && styles.categoryOptionIconSelected]}><Text style={styles.categoryIconText}>{item === 'Todas' ? '•' : ICONES_CATEGORIA[item]}</Text></View><Text style={[styles.categoryOptionText, categoria === item && styles.categoryOptionTextSelected]}>{item}</Text></Pressable>)}</View> : null}
         </View>
       </View>
-      <FlatList data={filtradas} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => <View><CardMovimentacao movimentacao={item} /><View style={styles.itemActions}><Pressable accessibilityRole="button" onPress={() => navigation.navigate('NovoLancamento', { movimentacao: item })} style={styles.actionButton}><Text style={styles.actionText}>Editar</Text></Pressable><Pressable accessibilityRole="button" onPress={() => Alert.alert('Excluir lançamento', 'Deseja excluir este lançamento?', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Excluir', style: 'destructive', onPress: async () => { try { await removerMovimentacao(item.id); } catch (error) { Alert.alert('Erro', error.message); } } }])} style={styles.actionButton}><Text style={styles.deleteText}>Excluir</Text></Pressable></View></View>} ListEmptyComponent={<Text style={styles.empty}>Nenhum lançamento encontrado para esses filtros.</Text>} contentContainerStyle={filtradas.length ? undefined : styles.emptyList} />
+      <FlatList data={filtradas} keyExtractor={(item) => String(item.id)} renderItem={({ item }) => {
+        const ehDonoDaConta = contaConjunta?.membros?.some((membro) => membro.user_id === usuario?.id && membro.role === 'owner');
+        return <View><CardMovimentacao movimentacao={item} /><View style={styles.itemActions}><Pressable accessibilityRole="button" onPress={() => navigation.navigate('NovoLancamento', { movimentacao: item })} style={styles.actionButton}><Text style={styles.actionText}>Editar</Text></Pressable><Pressable accessibilityRole="button" onPress={() => Alert.alert('Excluir lançamento', 'Deseja excluir este lançamento?', [{ text: 'Cancelar', style: 'cancel' }, { text: 'Excluir', style: 'destructive', onPress: async () => { try { await removerMovimentacao(item.id); } catch (error) { Alert.alert('Erro', error.message); } } }])} style={styles.actionButton}><Text style={styles.deleteText}>Excluir</Text></Pressable></View>{!ehDonoDaConta && item.createdBy !== usuario?.id ? <Text style={styles.empty}>Apenas {item.autorNome || 'o criador'} ou o dono da conta pode editar ou excluir.</Text> : null}</View>;
+      }} ListEmptyComponent={<Text style={styles.empty}>Nenhum lançamento encontrado para esses filtros.</Text>} contentContainerStyle={filtradas.length ? undefined : styles.emptyList} />
     </View>
   );
 };

@@ -6,10 +6,11 @@ import { useFinance } from '../../context/FinanceContext';
 import styles from './styles';
 
 const ContaConjunta = ({ navigation }) => {
-  const { contaConjunta, convidarMembro } = useFinance();
+  const { contaConjunta, convidarMembro, removerMembro, sairDaContaConjunta, usuario } = useFinance();
   const [email, setEmail] = useState('');
   const [erro, setErro] = useState('');
   const [carregando, setCarregando] = useState(false);
+  const souDono = contaConjunta?.membros?.some((membro) => membro.user_id === usuario?.id && membro.role === 'owner');
 
   const adicionar = async () => {
     if (!email.trim()) {
@@ -42,16 +43,51 @@ const ContaConjunta = ({ navigation }) => {
       <View style={styles.card}>
         <Text style={styles.title}>Conta conjunta</Text>
         <Text style={styles.subtitle}>Adicione alguém que já possui cadastro para compartilhar os lançamentos.</Text>
-        <CampoTexto label="E-mail do integrante" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="pessoa@exemplo.com" />
+        {souDono ? <><CampoTexto label="E-mail do integrante" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" placeholder="pessoa@exemplo.com" />
+          <BotaoPrincipal title="Adicionar integrante" onPress={adicionar} loading={carregando} /></> : <Pressable
+            accessibilityRole="button"
+            onPress={() => Alert.alert('Sair da conta conjunta', 'Se você sair, seus lançamentos permanecerão na conta conjunta.', [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Sair', style: 'destructive', onPress: async () => {
+                try {
+                  await sairDaContaConjunta();
+                  Alert.alert('Conta conjunta', 'Você saiu da conta conjunta.');
+                  navigation.navigate('Dashboard');
+                } catch (error) {
+                  setErro(error.message);
+                }
+              } },
+            ])}
+          >
+            <Text style={styles.leaveText}>Sair da conta conjunta</Text>
+          </Pressable>}
         {erro ? <Text style={styles.error}>{erro}</Text> : null}
-        <BotaoPrincipal title="Adicionar integrante" onPress={adicionar} loading={carregando} />
       </View>
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Integrantes</Text>
         {(contaConjunta?.membros || []).map((membro) => (
           <View key={membro.user_id} style={styles.member}>
-            <Text style={styles.memberName}>{membro.profiles?.full_name || 'Integrante'}</Text>
-            <Text style={styles.memberRole}>{membro.role === 'owner' ? 'Dono da conta' : 'Integrante'}</Text>
+            <View>
+              <Text style={styles.memberName}>{membro.profiles?.full_name || 'Integrante'}</Text>
+              <Text style={styles.memberRole}>{membro.role === 'owner' ? 'Dono da conta' : 'Integrante'}</Text>
+            </View>
+            {membro.role === 'member' && souDono ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => Alert.alert('Remover integrante', 'Remover este integrante da conta conjunta?', [
+                  { text: 'Cancelar', style: 'cancel' },
+                  { text: 'Remover', style: 'destructive', onPress: async () => {
+                    try {
+                      await removerMembro(membro.user_id);
+                    } catch (error) {
+                      Alert.alert('Erro', error.message);
+                    }
+                  } },
+                ])}
+              >
+                <Text style={styles.removeText}>Remover</Text>
+              </Pressable>
+            ) : null}
           </View>
         ))}
       </View>

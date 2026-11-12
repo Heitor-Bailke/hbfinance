@@ -11,7 +11,9 @@ export default StyleSheet.create({
   subtitle: { color: CORES.cinzaTexto, lineHeight: 20, marginBottom: 12 },
   error: { color: CORES.vermelho, fontSize: 13, marginTop: 8 },
   sectionTitle: { color: CORES.marinho, fontSize: 18, fontWeight: '800', marginBottom: 12 },
-  member: { borderTopColor: CORES.borda, borderTopWidth: 1, paddingVertical: 12 },
+  member: { alignItems: 'center', borderTopColor: CORES.borda, borderTopWidth: 1, flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12 },
   memberName: { color: CORES.texto, fontSize: 15, fontWeight: '700' },
   memberRole: { color: CORES.cinzaTexto, fontSize: 12, marginTop: 3 },
+  removeText: { color: CORES.vermelho, fontSize: 12, fontWeight: '700' },
+  leaveText: { color: CORES.vermelho, fontSize: 14, fontWeight: '700', paddingVertical: 12 },
 });

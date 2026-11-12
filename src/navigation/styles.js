@@ -12,4 +12,7 @@ export default StyleSheet.create({
   menuButton: { alignItems: 'center', justifyContent: 'center', minWidth: 52, paddingHorizontal: 14, paddingVertical: 8 },
   menuButtonText: { color: CORES.branco, fontSize: 18, fontWeight: '900', letterSpacing: 2 },
   navigator: { drawerActiveTintColor: CORES.marinho, drawerInactiveTintColor: '#64748B', headerStyle: { backgroundColor: CORES.marinho }, headerTintColor: CORES.branco },
+  drawerNotificationLabel: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between', width: '100%' },
+  drawerNotificationText: { color: '#64748B', fontSize: 14, fontWeight: '600' },
+  notificationDot: { backgroundColor: CORES.azul, borderRadius: 5, height: 10, width: 10 },
 });
