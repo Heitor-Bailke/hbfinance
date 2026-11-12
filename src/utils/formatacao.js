@@ -53,8 +53,26 @@ export const formatarMoeda = (valor) =>
 
 export const formatarData = (valor) => {
   if (!valor) return '-';
-  const data = new Date(`${valor}T12:00:00`);
-  return Number.isNaN(data.getTime()) ? valor : data.toLocaleDateString('pt-BR');
+  const texto = String(valor);
+  const correspondencia = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (correspondencia) return `${correspondencia[3]}/${correspondencia[2]}/${correspondencia[1]}`;
+  return texto;
+};
+
+export const formatarDataDigitada = (valor) => {
+  const digitos = String(valor || '').replace(/\D/g, '').slice(0, 8);
+  if (digitos.length <= 2) return digitos;
+  if (digitos.length <= 4) return `${digitos.slice(0, 2)}/${digitos.slice(2)}`;
+  return `${digitos.slice(0, 2)}/${digitos.slice(2, 4)}/${digitos.slice(4)}`;
+};
+
+export const converterDataParaIso = (valor) => {
+  const correspondencia = String(valor || '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!correspondencia) return '';
+  const [, dia, mes, ano] = correspondencia;
+  const data = new Date(Date.UTC(Number(ano), Number(mes) - 1, Number(dia)));
+  if (data.getUTCFullYear() !== Number(ano) || data.getUTCMonth() !== Number(mes) - 1 || data.getUTCDate() !== Number(dia)) return '';
+  return `${ano}-${mes}-${dia}`;
 };
 
 export const validarEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);

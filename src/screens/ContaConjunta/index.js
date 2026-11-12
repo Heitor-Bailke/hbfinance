@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import BotaoPrincipal from '../../components/BotaoPrincipal';
 import CampoTexto from '../../components/CampoTexto';
 import { useFinance } from '../../context/FinanceContext';
 import styles from './styles';
 
-const ContaConjunta = () => {
+const ContaConjunta = ({ navigation }) => {
   const { contaConjunta, convidarMembro } = useFinance();
   const [email, setEmail] = useState('');
   const [erro, setErro] = useState('');
@@ -31,6 +31,14 @@ const ContaConjunta = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'))}
+        style={styles.backButton}
+      >
+        <Text style={styles.backButtonText}>‹ Voltar</Text>
+      </Pressable>
       <View style={styles.card}>
         <Text style={styles.title}>Conta conjunta</Text>
         <Text style={styles.subtitle}>Adicione alguém que já possui cadastro para compartilhar os lançamentos.</Text>

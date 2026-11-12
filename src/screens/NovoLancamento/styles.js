@@ -5,6 +5,8 @@ export default StyleSheet.create({
   container: { backgroundColor: CORES.cinza, flex: 1 },
   content: { alignItems: 'center', padding: 24 },
   formCard: { backgroundColor: CORES.branco, borderColor: '#E2E8F0', borderRadius: 12, borderWidth: 1, maxWidth: 680, padding: 24, width: '100%' },
+  backButton: { alignSelf: 'flex-start', marginBottom: 14, paddingVertical: 4 },
+  backButtonText: { color: CORES.azul, fontSize: 14, fontWeight: '700' },
   intro: { alignItems: 'center', borderBottomColor: '#E2E8F0', borderBottomWidth: 1, flexDirection: 'row', marginBottom: 24, paddingBottom: 20 },
   introIcon: { alignItems: 'center', backgroundColor: '#DDF8EF', borderRadius: 16, height: 52, justifyContent: 'center', marginRight: 14, width: 52 },
   introIconText: { color: CORES.verde, fontSize: 34, fontWeight: '300', lineHeight: 38 },

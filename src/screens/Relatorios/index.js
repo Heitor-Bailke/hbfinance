@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useFinance } from '../../context/FinanceContext';
 import { CATEGORIAS, CORES, formatarMoeda } from '../../utils/formatacao';
 import styles from './styles';
@@ -28,7 +28,7 @@ const calcularResumo = (movimentacoes) => {
   return { receitas, despesas, saldo: receitas - despesas };
 };
 
-const Relatorios = () => {
+const Relatorios = ({ navigation }) => {
   const { movimentacoes } = useFinance();
   const [inicio, setInicio] = useState(mesAtual);
   const [fim, setFim] = useState(mesAtual);
@@ -53,6 +53,14 @@ const Relatorios = () => {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Voltar"
+        onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'))}
+        style={styles.backButton}
+      >
+        <Text style={styles.backButtonText}>‹ Voltar</Text>
+      </Pressable>
       <Text style={styles.title}>Relatórios</Text>
       <View style={styles.periodCard}>
         <Text style={styles.periodTitle}>Período principal</Text>

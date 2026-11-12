@@ -4,6 +4,8 @@ import { CORES } from '../../utils/formatacao';
 export default StyleSheet.create({
   container: { alignSelf: 'center', backgroundColor: CORES.cinza, flex: 1, maxWidth: 760, padding: 24, width: '100%' },
   headerCard: { backgroundColor: CORES.branco, borderColor: CORES.borda, borderRadius: 12, borderWidth: 1, marginBottom: 18, padding: 24 },
+  backButton: { alignSelf: 'flex-start', marginBottom: 14, paddingVertical: 4 },
+  backButtonText: { color: CORES.azul, fontSize: 14, fontWeight: '700' },
   intro: { alignItems: 'center', borderBottomColor: CORES.borda, borderBottomWidth: 1, flexDirection: 'row', marginBottom: 20, paddingBottom: 18 },
   introIcon: { alignItems: 'center', backgroundColor: CORES.verdeClaro, borderRadius: 12, height: 48, justifyContent: 'center', marginRight: 13, width: 48 },
   introIconText: { color: CORES.verde, fontSize: 28, fontWeight: '800' },

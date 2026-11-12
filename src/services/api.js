@@ -12,13 +12,16 @@ const toTransaction = (item) => ({
   categoria: item.categories?.name || item.categoria,
 });
 
-const fromTransaction = ({ userId, householdId, createdBy, categoria, categoryId, categories, ...item }, authenticatedUserId, categoryMap, activeHouseholdId) => ({
-  ...item,
+const fromTransaction = ({ householdId, categoria, categoryId, descricao, valor, tipo, data }, authenticatedUserId, categoryMap, activeHouseholdId) => ({
   user_id: authenticatedUserId,
   household_id: activeHouseholdId || householdId,
   created_by: authenticatedUserId,
   categoria: categoria || (categoryId ? [...categoryMap.entries()].find(([, id]) => id === categoryId)?.[0] : null),
   category_id: categoryId || categoryMap?.get(categoria) || null,
+  descricao,
+  valor,
+  tipo,
+  data,
 });
 
 const obterUsuarioAutenticado = async () => {

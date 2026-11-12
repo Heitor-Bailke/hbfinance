@@ -14,6 +14,14 @@ const Lancamentos = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <View style={styles.headerCard}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Voltar"
+          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'))}
+          style={styles.backButton}
+        >
+          <Text style={styles.backButtonText}>‹ Voltar</Text>
+        </Pressable>
         <View style={styles.intro}>
           <View style={styles.introIcon}><Text style={styles.introIconText}>≡</Text></View>
           <View><Text style={styles.title}>Lançamentos</Text><Text style={styles.subtitle}>Consulte e filtre suas movimentações</Text></View>

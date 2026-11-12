@@ -4,12 +4,12 @@ import { useFocusEffect } from '@react-navigation/native';
 import BotaoPrincipal from '../../components/BotaoPrincipal';
 import CampoTexto from '../../components/CampoTexto';
 import { useFinance } from '../../context/FinanceContext';
-import { CATEGORIAS, CORES, ICONES_CATEGORIA, obterDataLocal } from '../../utils/formatacao';
+import { CATEGORIAS, CORES, ICONES_CATEGORIA, converterDataParaIso, formatarData, formatarDataDigitada, obterDataLocal } from '../../utils/formatacao';
 import styles from './styles';
 
 const NovoLancamento = ({ navigation, route }) => {
   const { adicionarMovimentacao, editarMovimentacao } = useFinance();
-  const criarFormularioInicial = () => ({ tipo: 'despesa', descricao: '', valor: '', categoria: 'Alimentação', data: obterDataLocal() });
+  const criarFormularioInicial = () => ({ tipo: 'despesa', descricao: '', valor: '', categoria: 'Alimentação', data: formatarData(obterDataLocal()) });
   const [form, setForm] = useState(() => route?.params?.movimentacao || criarFormularioInicial());
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
@@ -18,7 +18,7 @@ const NovoLancamento = ({ navigation, route }) => {
   const editando = Boolean(form.id);
   useFocusEffect(useCallback(() => {
     const movimentacao = route?.params?.movimentacao;
-    setForm(movimentacao ? { ...movimentacao, valor: String(movimentacao.valor ?? '') } : criarFormularioInicial());
+    setForm(movimentacao ? { ...movimentacao, valor: String(movimentacao.valor ?? ''), data: formatarData(movimentacao.data) } : criarFormularioInicial());
     setErro('');
     setSucesso('');
     setCategoriasAbertas(false);
@@ -29,10 +29,11 @@ const NovoLancamento = ({ navigation, route }) => {
   const alterar = (campo, valor) => setForm((atual) => ({ ...atual, [campo]: valor }));
   const salvar = async () => {
     const valor = Number(String(form.valor ?? '').replace(',', '.'));
-    if (!form.descricao.trim() || !Number.isFinite(valor) || valor <= 0 || !form.data) { setErro('Preencha todos os campos e informe um valor maior que zero.'); return; }
+    const data = converterDataParaIso(form.data);
+    if (!form.descricao.trim() || !Number.isFinite(valor) || valor <= 0 || !data) { setErro('Preencha todos os campos, informe uma data válida e um valor maior que zero.'); return; }
     setErro(''); setSucesso(''); setCarregando(true);
     try {
-      const dados = { ...form, descricao: form.descricao.trim(), valor };
+      const dados = { ...form, descricao: form.descricao.trim(), valor, data };
       if (editando) await editarMovimentacao(form.id, dados);
       else await adicionarMovimentacao(dados);
       setForm(criarFormularioInicial());
@@ -46,6 +47,14 @@ const NovoLancamento = ({ navigation, route }) => {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.formCard}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Voltar"
+            onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Dashboard'))}
+            style={styles.backButton}
+          >
+            <Text style={styles.backButtonText}>‹ Voltar</Text>
+          </Pressable>
           <View style={styles.intro}>
             <View style={styles.introIcon}><Text style={styles.introIconText}>+</Text></View>
             <View><Text style={styles.title}>{editando ? 'Editar lançamento' : 'Novo lançamento'}</Text><Text style={styles.subtitle}>{editando ? 'Atualize os dados da movimentação' : 'Registre uma receita ou despesa'}</Text></View>
@@ -72,7 +81,7 @@ const NovoLancamento = ({ navigation, route }) => {
             <Text style={styles.categoryChevron}>{categoriasAbertas ? '⌃' : '⌄'}</Text>
           </Pressable>
           {categoriasAbertas ? <View style={styles.categoryGrid}>{CATEGORIAS.filter((item) => item !== 'Todas').map((item) => <Pressable key={item} onPress={() => { alterar('categoria', item); setCategoriasAbertas(false); }} style={[styles.categoryOption, form.categoria === item && styles.categoryOptionSelected]}><View style={[styles.categoryOptionIcon, form.categoria === item && styles.categoryOptionIconSelected]}><Text style={styles.categoryIconText}>{ICONES_CATEGORIA[item]}</Text></View><Text style={[styles.categoryOptionText, form.categoria === item && styles.categoryOptionTextSelected]}>{item}</Text></Pressable>)}</View> : null}
-          <CampoTexto label="Data" value={form.data} onChangeText={(value) => alterar('data', value)} placeholder="AAAA-MM-DD" />
+          <CampoTexto label="Data" value={form.data} onChangeText={(value) => alterar('data', formatarDataDigitada(value))} placeholder="DD/MM/AAAA" keyboardType="numeric" />
           {erro ? <Text style={styles.formError}>{erro}</Text> : null}
           {sucesso ? <Text accessibilityRole="alert" style={styles.formSuccess}>{sucesso}</Text> : null}
           <BotaoPrincipal title={editando ? 'Salvar alterações' : 'Salvar lançamento'} onPress={salvar} loading={carregando} />
