@@ -8,12 +8,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const toTransaction = (item) => ({
   ...item,
   userId: item.user_id,
+  autorNome: item.created_by_profile?.full_name || 'Integrante',
   categoria: item.categories?.name || item.categoria,
 });
 
-const fromTransaction = ({ userId, categoria, categoryId, ...item }, authenticatedUserId, categoryMap) => ({
+const fromTransaction = ({ userId, householdId, createdBy, categoria, categoryId, categories, ...item }, authenticatedUserId, categoryMap, activeHouseholdId) => ({
   ...item,
   user_id: authenticatedUserId,
+  household_id: activeHouseholdId || householdId,
+  created_by: authenticatedUserId,
+  categoria: categoria || (categoryId ? [...categoryMap.entries()].find(([, id]) => id === categoryId)?.[0] : null),
   category_id: categoryId || categoryMap?.get(categoria) || null,
 });
 
@@ -54,43 +58,68 @@ export const buscarCategorias = async () => {
   return data || [];
 };
 
+export const buscarContaConjunta = async () => {
+  const usuario = await obterUsuarioAutenticado();
+  const { data, error } = await supabase
+    .from('household_members')
+    .select('household_id, households(id, name), profiles:user_id(id, full_name)')
+    .eq('user_id', usuario.id)
+    .limit(1)
+    .single();
+  if (error) throw new Error(error.message);
+  const { data: membros, error: erroMembros } = await supabase
+    .from('household_members')
+    .select('user_id, role, profiles:user_id(id, full_name)')
+    .eq('household_id', data.household_id);
+  if (erroMembros) throw new Error(erroMembros.message);
+  return { id: data.household_id, nome: data.households?.name || 'Conta familiar', membros: membros || [] };
+};
+
+export const convidarMembro = async (email) => {
+  const { error } = await supabase.rpc('invite_household_member', { member_email: email.trim().toLowerCase() });
+  if (error) throw new Error(error.message);
+};
+
 export const sairUsuario = async () => {
   const { error } = await supabase.auth.signOut();
   if (error) throw new Error(error.message);
 };
 
-export const buscarTransacoes = async (userId) => {
+export const buscarTransacoes = async (userId, householdId) => {
   const usuario = await obterUsuarioAutenticado();
-  const { data, error } = await supabase
+  let consulta = supabase
     .from('transactions')
-    .select('*, categories(id, name)')
-    .eq('user_id', usuario.id)
+    .select('*, categories(id, name), created_by_profile:profiles!transactions_created_by_profile_fkey(full_name)')
     .order('data', { ascending: false });
+  consulta = householdId
+    ? consulta.eq('household_id', householdId)
+    : consulta.eq('user_id', usuario.id);
+  const { data, error } = await consulta;
   if (error) throw new Error(error.message);
   return (data || []).map(toTransaction);
 };
 
-export const cadastrarTransacao = async (transacao, categorias = []) => {
+export const cadastrarTransacao = async (transacao, categorias = [], householdId) => {
   const usuario = await obterUsuarioAutenticado();
   const categoryMap = new Map(categorias.map((item) => [item.name, item.id]));
   const { data, error } = await supabase
     .from('transactions')
-    .insert(fromTransaction(transacao, usuario.id, categoryMap))
-    .select('*, categories(id, name)')
+    .insert(fromTransaction(transacao, usuario.id, categoryMap, householdId))
+    .select('*, categories(id, name), created_by_profile:profiles!transactions_created_by_profile_fkey(full_name)')
     .single();
   if (error) throw new Error(error.message);
   return toTransaction(data);
 };
 
-export const atualizarTransacao = async (id, transacao, categorias = []) => {
+export const atualizarTransacao = async (id, transacao, categorias = [], householdId) => {
   const usuario = await obterUsuarioAutenticado();
   const categoryMap = new Map(categorias.map((item) => [item.name, item.id]));
   const { data, error } = await supabase
     .from('transactions')
-    .update(fromTransaction(transacao, usuario.id, categoryMap))
+    .update(fromTransaction(transacao, usuario.id, categoryMap, householdId))
     .eq('id', id)
     .eq('user_id', usuario.id)
-    .select('*, categories(id, name)')
+    .select('*, categories(id, name), created_by_profile:profiles!transactions_created_by_profile_fkey(full_name)')
     .single();
   if (error) throw new Error(error.message);
   return toTransaction(data);

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import BotaoPrincipal from '../../components/BotaoPrincipal';
 import CampoTexto from '../../components/CampoTexto';
 import { useFinance } from '../../context/FinanceContext';
@@ -15,10 +16,19 @@ const NovoLancamento = ({ navigation, route }) => {
   const [carregando, setCarregando] = useState(false);
   const [categoriasAbertas, setCategoriasAbertas] = useState(false);
   const editando = Boolean(form.id);
-  useEffect(() => () => { if (navigation?.setParams) navigation.setParams({ movimentacao: undefined }); }, [navigation]);
+  useFocusEffect(useCallback(() => {
+    const movimentacao = route?.params?.movimentacao;
+    setForm(movimentacao ? { ...movimentacao, valor: String(movimentacao.valor ?? '') } : criarFormularioInicial());
+    setErro('');
+    setSucesso('');
+    setCategoriasAbertas(false);
+    return () => {
+      if (navigation?.setParams) navigation.setParams({ movimentacao: undefined });
+    };
+  }, [navigation, route?.params?.movimentacao?.id]));
   const alterar = (campo, valor) => setForm((atual) => ({ ...atual, [campo]: valor }));
   const salvar = async () => {
-    const valor = Number(form.valor.replace(',', '.'));
+    const valor = Number(String(form.valor ?? '').replace(',', '.'));
     if (!form.descricao.trim() || !Number.isFinite(valor) || valor <= 0 || !form.data) { setErro('Preencha todos os campos e informe um valor maior que zero.'); return; }
     setErro(''); setSucesso(''); setCarregando(true);
     try {
@@ -45,7 +55,7 @@ const NovoLancamento = ({ navigation, route }) => {
           <View style={styles.typeSelector}>
             <Pressable onPress={() => alterar('tipo', 'despesa')} style={[styles.typeOption, form.tipo === 'despesa' && styles.expenseSelected]}>
               <Text style={[styles.typeIcon, form.tipo === 'despesa' && styles.selectedText]}>↓</Text>
-              <View><Text style={[styles.typeTitle, form.tipo === 'despesa' && styles.selectedText]}>Despesa</Text><Text style={styles.typeHint}>Dinheiro que sai</Text></View>
+              <View><Text style={[styles.typeTitle, form.tipo === 'despesa' && styles.selectedText]}>Gasto</Text><Text style={styles.typeHint}>Dinheiro que sai</Text></View>
             </Pressable>
             <Pressable onPress={() => alterar('tipo', 'receita')} style={[styles.typeOption, form.tipo === 'receita' && styles.incomeSelected]}>
               <Text style={[styles.typeIcon, form.tipo === 'receita' && styles.incomeText]}>↑</Text>

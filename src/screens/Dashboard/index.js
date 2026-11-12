@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect } from 'react';
+import React, { useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import CardMovimentacao from '../../components/CardMovimentacao';
 import CardSaldo from '../../components/CardSaldo';
@@ -8,7 +9,9 @@ import styles from './styles';
 
 const Dashboard = ({ navigation }) => {
   const { usuario, movimentacoes, receitas, despesas, saldo, carregarMovimentacoes, carregando, erro, sair } = useFinance();
-  useEffect(() => { carregarMovimentacoes(); }, [carregarMovimentacoes]);
+  useFocusEffect(useCallback(() => {
+    carregarMovimentacoes();
+  }, [carregarMovimentacoes]));
   const atualizar = useCallback(() => carregarMovimentacoes(), [carregarMovimentacoes]);
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={carregando} onRefresh={atualizar} />}>

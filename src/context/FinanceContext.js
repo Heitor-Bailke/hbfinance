@@ -8,6 +8,8 @@ import {
   entrarUsuario,
   sairUsuario,
   buscarCategorias,
+  buscarContaConjunta,
+  convidarMembro,
 } from '../services/api';
 
 const FinanceContext = createContext(null);
@@ -18,6 +20,7 @@ export const FinanceProvider = ({ children }) => {
   const [carregando, setCarregando] = useState(false);
   const [erro, setErro] = useState('');
   const [categorias, setCategorias] = useState([]);
+  const [contaConjunta, setContaConjunta] = useState(null);
   const normalizarUsuario = (dados) => dados ? {
     ...dados,
     nome: dados.nome || dados.user_metadata?.full_name || dados.email,
@@ -31,14 +34,14 @@ export const FinanceProvider = ({ children }) => {
     setCarregando(true);
     setErro('');
     try {
-      const dados = await buscarTransacoes(usuario.id);
+      const dados = await buscarTransacoes(usuario.id, contaConjunta?.id);
       setMovimentacoes(Array.isArray(dados) ? dados : []);
     } catch (error) {
       setErro(error.message);
     } finally {
       setCarregando(false);
     }
-  }, [usuario]);
+  }, [usuario, contaConjunta]);
 
   const registrarUsuario = useCallback(async ({ nome, email, senha }) => {
     setErro('');
@@ -46,6 +49,7 @@ export const FinanceProvider = ({ children }) => {
     if (resultado.session) {
       setUsuario(normalizarUsuario(resultado.user));
       setCategorias(await buscarCategorias());
+      setContaConjunta(await buscarContaConjunta());
     }
     return resultado;
   }, []);
@@ -55,6 +59,7 @@ export const FinanceProvider = ({ children }) => {
     const encontrado = await entrarUsuario({ email: email.trim().toLowerCase(), senha });
     setUsuario(normalizarUsuario(encontrado));
     setCategorias(await buscarCategorias());
+    setContaConjunta(await buscarContaConjunta());
     return encontrado;
   }, []);
 
@@ -64,17 +69,17 @@ export const FinanceProvider = ({ children }) => {
     }
     setErro('');
     const transacao = { ...dados, userId: usuario.id };
-    const nova = await cadastrarTransacao(transacao, categorias);
+    const nova = await cadastrarTransacao(transacao, categorias, contaConjunta?.id);
     setMovimentacoes((atuais) => [nova || { ...transacao, id: Date.now().toString() }, ...atuais]);
     return nova;
-  }, [usuario, categorias]);
+  }, [usuario, categorias, contaConjunta]);
 
   const editarMovimentacao = useCallback(async (id, dados) => {
     if (!usuario) throw new Error('Faça login para editar um lançamento.');
-    const atualizada = await atualizarTransacao(id, { ...dados, userId: usuario.id }, categorias);
+    const atualizada = await atualizarTransacao(id, { ...dados, userId: usuario.id }, categorias, contaConjunta?.id);
     setMovimentacoes((atuais) => atuais.map((item) => String(item.id) === String(id) ? atualizada : item));
     return atualizada;
-  }, [usuario, categorias]);
+  }, [usuario, categorias, contaConjunta]);
 
   const removerMovimentacao = useCallback(async (id) => {
     if (!usuario) throw new Error('Faça login para excluir um lançamento.');
@@ -88,6 +93,7 @@ export const FinanceProvider = ({ children }) => {
       await sairUsuario();
       setUsuario(null);
       setCategorias([]);
+      setContaConjunta(null);
     } catch (error) {
       setErro(error.message);
     }
@@ -108,6 +114,11 @@ export const FinanceProvider = ({ children }) => {
   const valor = {
     usuario,
     categorias,
+    contaConjunta,
+    convidarMembro: async (email) => {
+      await convidarMembro(email);
+      setContaConjunta(await buscarContaConjunta());
+    },
     movimentacoes,
     carregando,
     erro,

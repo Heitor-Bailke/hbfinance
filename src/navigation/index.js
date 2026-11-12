@@ -8,6 +8,7 @@ import Dashboard from '../screens/Dashboard';
 import Lancamentos from '../screens/Lancamentos';
 import NovoLancamento from '../screens/NovoLancamento';
 import Relatorios from '../screens/Relatorios';
+import ContaConjunta from '../screens/ContaConjunta';
 import { useFinance } from '../context/FinanceContext';
 import styles from './styles';
 
@@ -50,6 +51,7 @@ const NavegacaoPrincipal = () => (
     <Drawer.Screen name="Lançamentos" component={Lancamentos} />
     <Drawer.Screen name="NovoLancamento" component={NovoLancamento} options={{ title: 'Novo lançamento' }} />
     <Drawer.Screen name="Relatórios" component={Relatorios} />
+    <Drawer.Screen name="Conta conjunta" component={ContaConjunta} />
   </Drawer.Navigator>
 );
 

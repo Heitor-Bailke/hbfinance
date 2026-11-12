@@ -9,7 +9,7 @@ const CardSaldo = ({ saldo, receitas, despesas }) => (
     <Text style={styles.total}>{formatarMoeda(saldo)}</Text>
     <View style={styles.row}>
       <View><Text style={styles.label}>Receitas</Text><Text style={styles.receita}>{formatarMoeda(receitas)}</Text></View>
-      <View><Text style={styles.label}>Despesas</Text><Text style={styles.despesa}>{formatarMoeda(despesas)}</Text></View>
+      <View><Text style={styles.label}>Gastos</Text><Text style={styles.despesa}>{formatarMoeda(despesas)}</Text></View>
     </View>
   </View>
 );

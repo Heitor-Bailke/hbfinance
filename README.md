@@ -75,6 +75,13 @@ O Supabase Auth continua armazenando as credenciais no schema interno `auth`.
 O aplicativo usa `category_id` em `transactions`, enquanto o nome da categoria
 continua disponível para as telas por meio da relação com `categories`.
 
+## Conta conjunta
+
+O app permite adicionar um integrante já cadastrado pelo e-mail na tela
+**Conta conjunta**. Os integrantes visualizam os lançamentos da mesma conta,
+mas cada pessoa pode editar ou excluir somente os lançamentos que criou. Cada
+lançamento também exibe o nome de quem o registrou.
+
 
 ## Segurança
 

@@ -23,7 +23,7 @@ const Lancamentos = ({ navigation }) => {
           <View style={styles.typeSelector}>
             <Pressable onPress={() => setTipo('todos')} style={[styles.typeOption, tipo === 'todos' && styles.typeOptionSelected]}><Text style={[styles.typeOptionText, tipo === 'todos' && styles.selectedTypeText]}>Todos</Text></Pressable>
             <Pressable onPress={() => setTipo('receita')} style={[styles.typeOption, tipo === 'receita' && styles.incomeOptionSelected]}><Text style={styles.typeOptionText}>Receitas</Text></Pressable>
-            <Pressable onPress={() => setTipo('despesa')} style={[styles.typeOption, tipo === 'despesa' && styles.expenseOptionSelected]}><Text style={styles.typeOptionText}>Despesas</Text></Pressable>
+            <Pressable onPress={() => setTipo('despesa')} style={[styles.typeOption, tipo === 'despesa' && styles.expenseOptionSelected]}><Text style={styles.typeOptionText}>Gastos</Text></Pressable>
           </View>
           <Text style={styles.label}>Categoria</Text>
           <Pressable onPress={() => setCategoriaAberta((aberta) => !aberta)} style={[styles.categorySelect, categoriaAberta && styles.categorySelectOpen]}>
